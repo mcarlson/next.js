@@ -47,6 +47,16 @@ var _server2 = _interopRequireDefault(_server);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var Fragment = _react2.default.Fragment || function Fragment(_ref) {
+  var children = _ref.children;
+
+  return _react2.default.createElement(
+    'div',
+    null,
+    children
+  );
+};
+
 var Document = function (_Component) {
   (0, _inherits3.default)(Document, _Component);
 
@@ -77,8 +87,8 @@ var Document = function (_Component) {
     }
   }], [{
     key: 'getInitialProps',
-    value: function getInitialProps(_ref) {
-      var renderPage = _ref.renderPage;
+    value: function getInitialProps(_ref2) {
+      var renderPage = _ref2.renderPage;
 
       var _renderPage = renderPage(),
           html = _renderPage.html,
@@ -141,14 +151,13 @@ var Head = exports.Head = function (_Component2) {
       var _context$_documentPro = this.context._documentProps,
           chunks = _context$_documentPro.chunks,
           __NEXT_DATA__ = _context$_documentPro.__NEXT_DATA__;
-      var assetPrefix = __NEXT_DATA__.assetPrefix,
-          buildId = __NEXT_DATA__.buildId;
+      var assetPrefix = __NEXT_DATA__.assetPrefix;
 
-      return chunks.map(function (chunk) {
+      return chunks.filenames.map(function (chunk) {
         return _react2.default.createElement('link', {
           key: chunk,
           rel: 'preload',
-          href: assetPrefix + '/_next/' + buildId + '/webpack/chunks/' + chunk,
+          href: assetPrefix + '/_next/webpack/chunks/' + chunk,
           as: 'script'
         });
       });
@@ -170,7 +179,7 @@ var Head = exports.Head = function (_Component2) {
         'head',
         this.props,
         (head || []).map(function (h, i) {
-          return _react2.default.cloneElement(h, { key: i });
+          return _react2.default.cloneElement(h, { key: h.key || i });
         }),
         _react2.default.createElement('link', { rel: 'preload', href: assetPrefix + '/_next/' + buildId + '/page' + pagePathname, as: 'script' }),
         _react2.default.createElement('link', { rel: 'preload', href: assetPrefix + '/_next/' + buildId + '/page/_error.js', as: 'script' }),
@@ -202,11 +211,10 @@ var Main = exports.Main = function (_Component3) {
       var _context$_documentPro3 = this.context._documentProps,
           html = _context$_documentPro3.html,
           errorHtml = _context$_documentPro3.errorHtml;
-      var className = this.props.className;
 
       return _react2.default.createElement(
-        'div',
-        { className: className },
+        Fragment,
+        null,
         _react2.default.createElement('div', { id: '__next', dangerouslySetInnerHTML: { __html: html } }),
         _react2.default.createElement('div', { id: '__next-error', dangerouslySetInnerHTML: { __html: errorHtml } })
       );
@@ -215,9 +223,6 @@ var Main = exports.Main = function (_Component3) {
   return Main;
 }(_react.Component);
 
-Main.propTypes = {
-  className: _propTypes2.default.string
-};
 Main.contextTypes = {
   _documentProps: _propTypes2.default.any
 };
@@ -266,18 +271,17 @@ var NextScript = exports.NextScript = function (_Component4) {
       var _context$_documentPro4 = this.context._documentProps,
           chunks = _context$_documentPro4.chunks,
           __NEXT_DATA__ = _context$_documentPro4.__NEXT_DATA__;
-      var assetPrefix = __NEXT_DATA__.assetPrefix,
-          buildId = __NEXT_DATA__.buildId;
+      var assetPrefix = __NEXT_DATA__.assetPrefix;
 
       return _react2.default.createElement(
-        'div',
+        Fragment,
         null,
-        chunks.map(function (chunk) {
+        chunks.filenames.map(function (chunk) {
           return _react2.default.createElement('script', {
             async: true,
             key: chunk,
             type: 'text/javascript',
-            src: assetPrefix + '/_next/' + buildId + '/webpack/chunks/' + chunk
+            src: assetPrefix + '/_next/webpack/chunks/' + chunk
           });
         })
       );
@@ -295,10 +299,10 @@ var NextScript = exports.NextScript = function (_Component4) {
 
       var pagePathname = getPagePathname(pathname);
 
-      __NEXT_DATA__.chunks = chunks;
+      __NEXT_DATA__.chunks = chunks.names;
 
       return _react2.default.createElement(
-        'div',
+        Fragment,
         null,
         staticMarkup ? null : _react2.default.createElement('script', { nonce: this.props.nonce, dangerouslySetInnerHTML: {
             __html: '\n          __NEXT_DATA__ = ' + (0, _htmlescape2.default)(__NEXT_DATA__) + '\n          module={}\n          __NEXT_LOADED_PAGES__ = []\n          __NEXT_LOADED_CHUNKS__ = []\n\n          __NEXT_REGISTER_PAGE = function (route, fn) {\n            __NEXT_LOADED_PAGES__.push({ route: route, fn: fn })\n          }\n\n          __NEXT_REGISTER_CHUNK = function (chunkName, fn) {\n            __NEXT_LOADED_CHUNKS__.push({ chunkName: chunkName, fn: fn })\n          }\n        '

@@ -105,10 +105,10 @@ var PageLoader = function () {
       var _this2 = this;
 
       route = this.normalizeRoute(route);
-      route = route === '/' ? '/index.js' : route + '.js';
+      var scriptRoute = route === '/' ? '/index.js' : route + '.js';
 
       var script = document.createElement('script');
-      var url = this.assetPrefix + '/_next/' + encodeURIComponent(this.buildId) + '/page' + route;
+      var url = this.assetPrefix + '/_next/' + encodeURIComponent(this.buildId) + '/page' + scriptRoute;
       script.src = url;
       script.type = 'text/javascript';
       script.onerror = function () {

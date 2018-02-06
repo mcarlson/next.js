@@ -108,7 +108,7 @@ var doRender = function () {
         _ref4$nextExport = _ref4.nextExport,
         nextExport = _ref4$nextExport === undefined ? false : _ref4$nextExport;
 
-    var dist, _ref5, _ref6, Component, Document, asPath, ctx, props, renderPage, docProps, devBuildId, doc;
+    var dist, pagePath, documentPath, _ref5, _ref6, Component, Document, asPath, ctx, props, renderPage, docProps, doc;
 
     return _regenerator2.default.wrap(function _callee3$(_context3) {
       while (1) {
@@ -121,10 +121,12 @@ var doRender = function () {
 
           case 3:
             dist = (0, _config2.default)(dir).distDir;
-            _context3.next = 6;
-            return _promise2.default.all([(0, _require2.default)((0, _path.join)(dir, dist, 'dist', 'pages', page)), (0, _require2.default)((0, _path.join)(dir, dist, 'dist', 'pages', '_document'))]);
+            pagePath = (0, _path.join)(dir, dist, 'dist', 'bundles', 'pages', page);
+            documentPath = (0, _path.join)(dir, dist, 'dist', 'bundles', 'pages', '_document');
+            _context3.next = 8;
+            return _promise2.default.all([(0, _require2.default)(pagePath), (0, _require2.default)(documentPath)]);
 
-          case 6:
+          case 8:
             _ref5 = _context3.sent;
             _ref6 = (0, _slicedToArray3.default)(_ref5, 2);
             Component = _ref6[0];
@@ -134,20 +136,20 @@ var doRender = function () {
             Document = Document.default || Document;
             asPath = req.url;
             ctx = { err: err, req: req, res: res, pathname: pathname, query: query, asPath: asPath };
-            _context3.next = 16;
+            _context3.next = 18;
             return (0, _utils.loadGetInitialProps)(Component, ctx);
 
-          case 16:
+          case 18:
             props = _context3.sent;
 
-            if (!res.finished) {
-              _context3.next = 19;
+            if (!(0, _utils.isResSent)(res)) {
+              _context3.next = 21;
               break;
             }
 
             return _context3.abrupt('return');
 
-          case 19:
+          case 21:
             renderPage = function renderPage() {
               var enhancer = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function (Page) {
                 return Page;
@@ -181,40 +183,34 @@ var doRender = function () {
               return { html: html, head: head, errorHtml: errorHtml, chunks: chunks };
             };
 
-            _context3.next = 22;
+            _context3.next = 24;
             return (0, _utils.loadGetInitialProps)(Document, (0, _extends3.default)({}, ctx, { renderPage: renderPage }));
 
-          case 22:
+          case 24:
             docProps = _context3.sent;
 
-            // While developing, we should not cache any assets.
-            // So, we use a different buildId for each page load.
-            // With that we can ensure, we have unique URL for assets per every page load.
-            // So, it'll prevent issues like this: https://git.io/vHLtb
-            devBuildId = Date.now();
-
-            if (!res.finished) {
-              _context3.next = 26;
+            if (!(0, _utils.isResSent)(res)) {
+              _context3.next = 27;
               break;
             }
 
             return _context3.abrupt('return');
 
-          case 26:
+          case 27:
             if (!(!Document.prototype || !Document.prototype.isReactComponent)) {
-              _context3.next = 28;
+              _context3.next = 29;
               break;
             }
 
             throw new Error('_document.js is not exporting a React element');
 
-          case 28:
+          case 29:
             doc = (0, _react.createElement)(Document, (0, _extends3.default)({
               __NEXT_DATA__: {
                 props: props,
                 pathname: pathname,
                 query: query,
-                buildId: dev ? devBuildId : buildId,
+                buildId: buildId,
                 buildStats: buildStats,
                 assetPrefix: assetPrefix,
                 nextExport: nextExport,
@@ -226,7 +222,7 @@ var doRender = function () {
             }, docProps));
             return _context3.abrupt('return', '<!DOCTYPE html>' + (0, _server.renderToStaticMarkup)(doc));
 
-          case 30:
+          case 31:
           case 'end':
             return _context3.stop();
         }
@@ -328,8 +324,6 @@ exports.serveStatic = serveStatic;
 
 var _path = require('path');
 
-var _fs = require('fs');
-
 var _react = require('react');
 
 var _server = require('react-dom/server');
@@ -357,6 +351,8 @@ var _config2 = _interopRequireDefault(_config);
 var _router = require('../lib/router');
 
 var _utils = require('../lib/utils');
+
+var _utils2 = require('./utils');
 
 var _head = require('../lib/head');
 
@@ -391,7 +387,7 @@ function renderErrorToHTML(err, req, res, pathname, query) {
 function sendHTML(req, res, html, method, _ref9) {
   var dev = _ref9.dev;
 
-  if (res.finished) return;
+  if ((0, _utils.isResSent)(res)) return;
   var etag = (0, _etag2.default)(html);
 
   if ((0, _fresh2.default)(req.headers, { etag: etag })) {
@@ -407,13 +403,15 @@ function sendHTML(req, res, html, method, _ref9) {
   }
 
   res.setHeader('ETag', etag);
-  res.setHeader('Content-Type', 'text/html');
+  if (!res.getHeader('Content-Type')) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  }
   res.setHeader('Content-Length', Buffer.byteLength(html));
   res.end(method === 'HEAD' ? null : html);
 }
 
 function sendJSON(res, obj, method) {
-  if (res.finished) return;
+  if ((0, _utils.isResSent)(res)) return;
 
   var json = (0, _stringify2.default)(obj);
   res.setHeader('Content-Type', 'application/json');
@@ -464,7 +462,14 @@ function loadChunks(_ref12) {
       availableChunks = _ref12.availableChunks;
 
   var flushedChunks = (0, _dynamic.flushChunks)();
-  var validChunks = [];
+  var response = {
+    names: [],
+    filenames: []
+  };
+
+  if (dev) {
+    availableChunks = (0, _utils2.getAvailableChunks)(dir, dist);
+  }
 
   var _iteratorNormalCompletion = true;
   var _didIteratorError = false;
@@ -474,10 +479,10 @@ function loadChunks(_ref12) {
     for (var _iterator = (0, _getIterator3.default)(flushedChunks), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
       var chunk = _step.value;
 
-      var filename = (0, _path.join)(dir, dist, 'chunks', chunk);
-      var exists = dev ? (0, _fs.existsSync)(filename) : availableChunks[chunk];
-      if (exists) {
-        validChunks.push(chunk);
+      var filename = availableChunks[chunk];
+      if (filename) {
+        response.names.push(chunk);
+        response.filenames.push(filename);
       }
     }
   } catch (err) {
@@ -495,5 +500,5 @@ function loadChunks(_ref12) {
     }
   }
 
-  return validChunks;
+  return response;
 }

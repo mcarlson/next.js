@@ -27,7 +27,7 @@ var render = exports.render = function () {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            if (!(props.err && !props.err.ignore)) {
+            if (!props.err) {
               _context2.next = 4;
               break;
             }
@@ -217,6 +217,12 @@ var _pageLoader = require('../lib/page-loader');
 
 var _pageLoader2 = _interopRequireDefault(_pageLoader);
 
+var _asset = require('../lib/asset');
+
+var asset = _interopRequireWildcard(_asset);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Polyfill Promise globally
@@ -239,6 +245,12 @@ var _window = window,
     assetPrefix = _window$__NEXT_DATA__.assetPrefix,
     location = _window.location;
 
+// With dynamic assetPrefix it's no longer possible to set assetPrefix at the build time
+// So, this is how we do it in the client side at runtime
+
+__webpack_public_path__ = assetPrefix + '/_next/webpack/'; //eslint-disable-line
+// Initialize next/asset with the assetPrefix
+asset.setAssetPrefix(assetPrefix);
 
 var asPath = (0, _utils.getURL)();
 
@@ -404,7 +416,8 @@ exports.default = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.de
 
 var isInitialRender = true;
 function renderReactElement(reactEl, domEl) {
-  if (isInitialRender) {
+  // The check for `.hydrate` is there to support React alternatives like preact
+  if (isInitialRender && typeof _reactDom2.default.hydrate === 'function') {
     _reactDom2.default.hydrate(reactEl, domEl);
     isInitialRender = false;
   } else {
